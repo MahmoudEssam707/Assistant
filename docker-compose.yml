@@ -1,0 +1,40 @@
+services:
+  # FastAPI Backend Service
+  api:
+    build: .
+    container_name: assistant-api
+    ports:
+      - "2024:2024"
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - DISPLAY=${DISPLAY}
+    command: ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "2024"]
+    volumes:
+      - .:/app
+      - /tmp/.X11-unix:/tmp/.X11-unix
+    restart: unless-stopped
+    healthcheck:
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+    external_links:
+      - ollama
+
+  # Streamlit Frontend Service  
+  ui:
+    build: .
+    container_name: assistant-ui
+    ports:
+      - "8501:8501"
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+    command: ["streamlit", "run", "chat_ui.py"]
+    volumes:
+      - .:/app
+    depends_on:
+      - api
+    restart: unless-stopped
