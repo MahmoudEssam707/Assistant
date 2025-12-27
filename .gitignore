@@ -1,4 +1,8 @@
 .venv
+.env
 credentials.json
 token.json
-state_log.log
+*.log
+checkpoints.db
+checkpoints.db-shm
+checkpoints.db-wal

@@ -9,7 +9,7 @@ app = FastAPI(title="Agent API", version="1.0.0")
 
 class QueryRequest(BaseModel):
     message: str
-    thread_id: str = "default"
+    thread_id: str = "Default"  # Identifier for memory checkpointing
 
 class QueryResponse(BaseModel):
     response: str
@@ -34,9 +34,13 @@ async def query_agent(request: QueryRequest) -> QueryResponse:
         # Stream the agent response and collect results
         stream_results = []
         logger.info("Starting graph stream...")
+        logger.info(f"Using memory checkpoint: {request.thread_id}")
+        
+        # Configure with thread_id for memory persistence
+        config = {"configurable": {"thread_id": request.thread_id}}
         
         try:
-            for i, chunk in enumerate(graph.stream(inputs, stream_mode="updates")):
+            for i, chunk in enumerate(graph.stream(inputs, config=config, stream_mode="updates")):
                 logger.info(f"Chunk {i}: {chunk}")
                 stream_results.append(chunk)
         except Exception as stream_error:
@@ -46,21 +50,39 @@ async def query_agent(request: QueryRequest) -> QueryResponse:
         
         logger.info(f"Total stream results: {len(stream_results)}")
         
-        # Extract the last AI message from the stream results
-        final_response = "No response generated"
+        # Extract tool outputs and final AI message
+        response_parts = []
+        final_ai_message = ""
         
-        # Look through stream results from the end to find the last AI message
-        for i, chunk in enumerate(reversed(stream_results)):
+        # Process all chunks to collect tool outputs and final message
+        for i, chunk in enumerate(stream_results):
             logger.info(f"Processing chunk {i}: {type(chunk)} - {chunk}")
+            
+            # Check for tool outputs
+            if isinstance(chunk, dict) and 'tools' in chunk:
+                messages = chunk['tools'].get('messages', [])
+                for message in messages:
+                    if hasattr(message, 'content') and message.content:
+                        # Add tool output to response parts
+                        response_parts.append(message.content)
+                        logger.info(f"Found tool output: {message.content[:100]}...")
+            
+            # Check for AI messages
             if isinstance(chunk, dict) and 'model' in chunk:
                 messages = chunk['model'].get('messages', [])
                 for message in messages:
                     if hasattr(message, 'content') and message.content:
-                        final_response = message.content
-                        logger.info(f"Found final response: {final_response[:100]}...")
-                        break
-                if final_response != "No response generated":
-                    break
+                        final_ai_message = message.content
+                        logger.info(f"Found AI message: {final_ai_message[:100]}...")
+        
+        # Combine tool outputs with final AI message
+        if response_parts:
+            # Show tool outputs first, then AI message
+            final_response = "\n\n".join(response_parts)
+            if final_ai_message:
+                final_response += f"\n\n{final_ai_message}"
+        else:
+            final_response = final_ai_message if final_ai_message else "No response generated"
         
         logger.info(f"Returning response: {final_response[:100]}...")
         return QueryResponse(response=final_response, thread_id=request.thread_id)

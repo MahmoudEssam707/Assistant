@@ -20,7 +20,7 @@ st.markdown("""
 
 class SimpleChat:
     def __init__(self):
-        self.api_url = "http://assistant-api:2024"
+        self.api_url = "http://localhost:2024"
     
     def send_message(self, message: str) -> Optional[str]:
         """Send message to agent and return response."""
