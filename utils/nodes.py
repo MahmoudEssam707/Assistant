@@ -7,9 +7,7 @@ from langchain.agents import create_agent
 from langgraph.checkpoint.sqlite import SqliteSaver
 import sqlite3
 from .tools import (
-    calculator_tool, 
-    send_mail_tool,
-    sheet_crud_tool
+    calculator_tool, send_mail_tool
 )
 load_dotenv()
 # Initialize LLM and tools
@@ -19,7 +17,7 @@ llm = ChatOpenAI(
     base_url=os.getenv("BASE_URL"),
     model=os.getenv("MODEL_NAME"),
 )
-tools = [calculator_tool, send_mail_tool, sheet_crud_tool]
+tools = [calculator_tool, send_mail_tool]
 
 # Initialize persistent memory checkpointer (saves to disk)
 # Memory will persist even after server restarts
@@ -59,9 +57,6 @@ TOOLS
 
 [send_mail_tool]
 - Use only when the user explicitly asks to send an email.
-
-[sheet_crud_tool]
-- Use for any spreadsheet data operations.
 
 ────────────────────────
 RULES
