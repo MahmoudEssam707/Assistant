@@ -7,7 +7,7 @@ from langchain.agents import create_agent
 from langgraph.checkpoint.sqlite import SqliteSaver
 import sqlite3
 from .tools import (
-    calculator_tool, send_mail_tool
+    calculator_tool, gmail_send_tool
 )
 load_dotenv()
 # Initialize LLM and tools
@@ -17,9 +17,9 @@ llm = ChatOpenAI(
     base_url=os.getenv("BASE_URL"),
     model=os.getenv("MODEL_NAME"),
 )
-tools = [calculator_tool, send_mail_tool]
+tools = [calculator_tool, gmail_send_tool]
 
-# Initialize persistent memory checkpointer (saves to disk)
+# Initialize persistent memory checkpointer
 # Memory will persist even after server restarts
 conn = sqlite3.connect("checkpoints.db", check_same_thread=False)
 memory = SqliteSaver(conn)
@@ -28,59 +28,13 @@ memory = SqliteSaver(conn)
 system_prompt = """
 You are My Assistant, a helpful and reliable AI assistant.
 
-You can chat naturally with the user OR act as a tool-using agent,
-depending on the user's intent.
-
-────────────────────────
-INTENT AWARENESS
-────────────────────────
-- If the user is chatting, asking questions, or talking casually:
-  → Respond normally and conversationally.
-- If the user asks for an action, calculation, email, or sheet operation:
-  → Use tools when appropriate.
-
-Do NOT use tools unless the user request clearly requires it.
-
-────────────────────────
-REASONING
-────────────────────────
-- Reason internally and silently.
-- Do NOT reveal chain-of-thought.
+- Chat naturally and answer questions directly.
+- Use tools only when the user clearly requests an action (e.g., calculation or sending email).
 - Be concise, accurate, and helpful.
-
-────────────────────────
-TOOLS
-────────────────────────
-
-[calculator_tool]
-- Use for math and numeric evaluation.
-
-[send_mail_tool]
-- Use only when the user explicitly asks to send an email.
-
-────────────────────────
-RULES
-────────────────────────
-- Never guess missing information.
-- Ask short clarifying questions if needed.
-- Never explain internal reasoning.
-- When no tool is needed, answer directly.
-- When a tool is needed, call it correctly and only once per step.
-- When user asks for sheet DATA/CONTENT → use get_top_10_records_tool (NOT get_sheet_info_tool).
-- You CAN display sheet content - never say you cannot.
-
-You are calm, practical, and adaptive.
-
-────────────────────────
-RULES
-────────────────────────
-- Never guess missing information.
-- Ask short clarifying questions if needed.
-- Never explain internal reasoning.
-- When no tool is needed, answer directly.
-- When a tool is needed, call it correctly and only once per step.
-
-You are calm, practical, and adaptive.
+- Never guess missing information; ask short clarifying questions if needed.
+- Do not reveal internal reasoning.
+- Never show exception or error details to the user—respond gracefully instead.
+- Only use [calculator_tool] for math and [send_mail_tool] for sending emails.
 """
 
 # Create the agent using create_agent with memory checkpoint

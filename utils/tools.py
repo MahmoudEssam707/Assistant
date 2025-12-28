@@ -7,24 +7,49 @@ from langchain_google_community.gmail.utils import (
     build_gmail_service,
     get_google_credentials,
 )
-from googleapiclient.discovery import build
 
-try:
-    credentials = get_google_credentials(
-        token_file="token.json",
-        scopes=[
-            "https://mail.google.com/",  # Gmail scope
-            "https://www.googleapis.com/auth/spreadsheets"  # Sheets scope
-        ],
-        client_secrets_file="credentials.json",
-    )
-    api_resource = build_gmail_service(credentials=credentials)
-    send_mail_tool = GmailSendMessage.from_api_resource(api_resource=api_resource)
-    sheets_service = build('sheets', 'v4', credentials=credentials)
-except:
-    api_resource = None
-    send_mail_tool = None
-    sheets_service = None
+@tool
+def gmail_send_tool(to: str, subject: str, body: str) -> str:
+    """
+    Send an email using Gmail.
+
+    Args:
+        to: Recipient email address
+        subject: Email subject
+        body: Email body text
+
+    Returns:
+        Success or failure message
+    """
+    logger.info(f"Sending Gmail to={to}, subject={subject}")
+
+    try:
+        credentials = get_google_credentials(
+            token_file="token.json",
+            scopes=["https://mail.google.com/"],
+            client_secrets_file="credentials.json",
+        )
+
+        api_resource = build_gmail_service(credentials=credentials)
+        send_mail_tool = GmailSendMessage.from_api_resource(
+            api_resource=api_resource
+        )
+
+        send_mail_tool.run(
+            {
+                "to": to,
+                "subject": subject,
+                "body": body,
+            }
+        )
+
+        logger.info("Gmail sent successfully")
+        return "Email sent successfully."
+
+    except Exception as e:
+        logger.error(f"Gmail send error: {e}")
+        return f"Failed to send email: {e}"
+
 
 @tool
 def calculator_tool(expression: str) -> str:
