@@ -1,8 +1,56 @@
 """Tool definitions using @tool decorator for the agent."""
 
-from .util import logger, get_gmail_service
+import os
+
+from qdrant_client import QdrantClient
+from .util import logger, get_gmail_service,embeddings
 from langchain_core.tools import tool
 from langchain_google_community.gmail.send_message import GmailSendMessage
+
+# =========================
+# Qdrant Client
+# =========================
+client = QdrantClient(
+    url=os.getenv("QDRANT_BASE_URL"),
+    api_key=os.getenv("QDRANT_API_KEY"),
+)
+
+# Tool to search in Qdrant collection
+@tool
+def search_in_knowledge(query: str, collection_name: str = "my_collection") -> str:
+    """
+    Search for the top similar vector in a Qdrant collection using a text query.
+
+    Args:
+        query: The user text query.
+        collection_name: The name of the Qdrant collection to search (default: "my_collection").
+
+    Returns:
+        A string representation of the top search result.
+    """
+    logger.info(f"Qdrant search in collection={collection_name} with query='{query}'")
+
+    try:
+        # Generate embedding for the query
+        query_vector = embeddings.embed_query(query)
+        search_result = client.query_points(
+            collection_name=collection_name,
+            query=query_vector,
+            limit=1,
+        )
+
+        if search_result:
+            logger.info(f"Qdrant search result: {search_result}")
+            top_result = search_result.points[0].payload["doc"]
+            logger.info(f"Top Qdrant search result: {top_result}")
+            return str(top_result)
+        else:
+            return "No results in my mind about it."
+
+    except Exception as e:
+        logger.exception("Qdrant search failed")
+        return f"❌ Qdrant search failed: {e}"
+
 
 
 @tool
