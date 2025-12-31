@@ -1,54 +1,40 @@
 """Tool definitions using @tool decorator for the agent."""
 
-from .util import logger
+from .util import logger, get_gmail_service
 from langchain_core.tools import tool
 from langchain_google_community.gmail.send_message import GmailSendMessage
-from langchain_google_community.gmail.utils import (
-    build_gmail_service,
-    get_google_credentials,
-)
+
 
 @tool
 def gmail_send_tool(to: str, subject: str, body: str) -> str:
     """
     Send an email using Gmail.
-
-    Args:
-        to: Recipient email address
-        subject: Email subject
-        body: Email body text
-
-    Returns:
-        Success or failure message
     """
     logger.info(f"Sending Gmail to={to}, subject={subject}")
 
     try:
-        credentials = get_google_credentials(
-            token_file="token.json",
-            scopes=["https://mail.google.com/"],
-            client_secrets_file="credentials.json",
-        )
+        service = get_gmail_service()
 
-        api_resource = build_gmail_service(credentials=credentials)
         send_mail_tool = GmailSendMessage.from_api_resource(
-            api_resource=api_resource
+            api_resource=service
         )
 
         send_mail_tool.run(
             {
                 "to": to,
                 "subject": subject,
-                "body": body,
+                "message": body,
             }
         )
 
-        logger.info("Gmail sent successfully")
-        return "Email sent successfully."
+        return "✅ Email sent successfully."
+
+    except FileNotFoundError:
+        return "❌ credentials.json not found. Gmail is not configured."
 
     except Exception as e:
-        logger.error(f"Gmail send error: {e}")
-        return f"Failed to send email: {e}"
+        logger.exception("Gmail send failed")
+        return f"❌ Failed to send email: {e}"
 
 
 @tool

@@ -10,13 +10,13 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     g++ \
     curl \
-    firefox-esr \
     xvfb \
     && rm -rf /var/lib/apt/lists/*
+
 
 # Copy requirements file
 COPY requirements.txt requirements.txt

@@ -6,8 +6,6 @@ import streamlit as st
 import requests
 from typing import Optional
 
-# Import for graph display
-from agent.graph import graph
 
 # Basic page config
 st.set_page_config(page_title="Assistant", page_icon="🤖")
@@ -24,7 +22,7 @@ st.markdown("""
 class SimpleChat:
     def __init__(self):
         self.api_url = "http://localhost:2024"
-    
+
     def send_message(self, message: str) -> Optional[str]:
         """Send message to agent and return response."""
         try:
@@ -38,32 +36,20 @@ class SimpleChat:
             return f"Connection error: {str(e)}"
     
     def run(self):
+    
         st.title("🤖 Assistant 🤖", text_alignment="center")
 
         # Initialize chat history
         if "messages" not in st.session_state:
             st.session_state.messages = []
-        if "show_graph" not in st.session_state:
-            st.session_state.show_graph = False
 
         # Display chat history
         for message in st.session_state.messages:
             with st.chat_message(message["role"]):
                 st.write(message["content"])
 
-        # Layout for chat input and graph button
-        col1, col2 = st.columns([10, 1])
-        with col1:
-            prompt = st.chat_input("Message")
-        with col2:
-            if st.button("🤖", key="show_graph_btn", help="Show graph structure"):
-                st.session_state.show_graph = not st.session_state.show_graph
-
-        # Show graph as a popover-like expander above the input
-        if st.session_state.show_graph:
-            with st.expander("Graph Structure", expanded=True):
-                ascii_graph = graph.get_graph().draw_ascii()
-                st.code(ascii_graph, language="text")
+        # Chat input only
+        prompt = st.chat_input("Message")
 
         # Handle user input
         if prompt:

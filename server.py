@@ -3,7 +3,20 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from agent.graph import graph
-from utils.util import logger
+from utils.util import logger, gmail_init_oauth
+import os
+
+
+# Gmail OAuth token check and initialization
+TOKEN_PATH = "token.json"
+if not os.path.exists(TOKEN_PATH):
+    logger.info("token.json not found. Running Gmail OAuth initialization...")
+    try:
+        gmail_init_oauth()
+        logger.info("Gmail OAuth completed and token.json created.")
+    except Exception as e:
+        logger.error(f"Gmail OAuth initialization failed: {e}")
+        # Optionally, raise or handle as needed
 
 app = FastAPI(title="Agent API", version="1.0.0")
 
@@ -18,6 +31,7 @@ class QueryResponse(BaseModel):
 @app.get("/")
 async def root():
     """Health check endpoint."""
+    # setup google credentials on startup if needed
     return {"message": "Agent API is running!"}
 
 @app.post("/query", response_model=QueryResponse)

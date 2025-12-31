@@ -31,6 +31,7 @@ google-auth-oauthlib==1.2.3
 google-cloud-core==2.5.0
 google-cloud-modelarmor==0.3.0
 googleapis-common-protos==1.72.0
+grandalf==0.8
 greenlet==3.3.0
 grpcio==1.76.0
 grpcio-status==1.76.0

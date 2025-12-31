@@ -5,6 +5,8 @@ services:
     container_name: assistant-api
     ports:
       - "2024:2024"
+    env_file:
+      - .env
     environment:
       - PYTHONPATH=/app
       - DISPLAY=${DISPLAY}
@@ -24,6 +26,8 @@ services:
     container_name: assistant-ui
     ports:
       - "8501:8501"
+    env_file:
+      - .env
     environment:
       - PYTHONPATH=/app
     command: ["streamlit", "run", "chat_ui.py"]
