@@ -52,23 +52,10 @@ def get_gmail_service():
     Load/create OAuth credentials and return a Gmail API service.
     """
     credentials = get_google_credentials(
-        token_file="token.json",
         scopes=["https://mail.google.com/"],
         client_secrets_file="credentials.json",
     )
     return build_gmail_service(credentials=credentials)
-
-def gmail_init_oauth():
-    """
-    Run once manually to generate token.json.
-    """
-    try:
-        get_gmail_service()
-        logger.info("Gmail OAuth completed. token.json created.")
-    except Exception as e:
-        logger.exception("Gmail OAuth failed")
-        raise RuntimeError(f"Gmail OAuth initialization failed: {e}") from e
-    
 
 # =========================
 # LLM and Embeddings Initialization

@@ -59,6 +59,7 @@ class SimpleChat:
 
             # Get and display assistant response
             with st.chat_message("assistant"):
+                st.empty()
                 with st.spinner("🤔 Thinking..."):
                     response = self.send_message(prompt)
                 st.write(response)
