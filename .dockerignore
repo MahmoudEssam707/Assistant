@@ -69,4 +69,6 @@ logs/
 temp/
 
 # Checkpoints database
-checkpoints.*
+*.db
+*.db-wal
+*.db-shm

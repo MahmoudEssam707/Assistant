@@ -1,9 +1,11 @@
 # =========================
 # Imports
 # =========================
+
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+print("Done System setup")
 
 from dotenv import load_dotenv
 from utils.util import embeddings
@@ -14,7 +16,9 @@ from qdrant_client.models import VectorParams, Distance, PointStruct
 # =========================
 # Environment Setup
 # =========================
+
 load_dotenv()
+print("Done Environment setup")
 
 COLLECTION_NAME = "my_collection"
 
@@ -48,7 +52,9 @@ python_docs = [
 # =========================
 # Generate Embeddings
 # =========================
+
 document_embeddings = embeddings.embed_documents(python_docs)
+print("Done Embedding generation")
 
 VECTOR_SIZE = len(document_embeddings[0])
 
@@ -56,6 +62,7 @@ VECTOR_SIZE = len(document_embeddings[0])
 # =========================
 # Collection Setup
 # =========================
+
 if not qdrant_client.collection_exists(COLLECTION_NAME):
     qdrant_client.create_collection(
         collection_name=COLLECTION_NAME,
@@ -64,11 +71,15 @@ if not qdrant_client.collection_exists(COLLECTION_NAME):
             distance=Distance.COSINE,
         ),
     )
+    print("Done Collection creation")
+else:
+    print("Collection already exists")
 
 
 # =========================
 # Insert Documents
 # =========================
+
 qdrant_client.upsert(
     collection_name=COLLECTION_NAME,
     points=[
@@ -82,18 +93,24 @@ qdrant_client.upsert(
         )
     ],
 )
+print("Done Upload (upsert)")
 
 # search for a sample query
+
 query = "What is a lambda function in Python?"
 query_vector = embeddings.embed_query(query)
+print("Done Query embedding")
 search_result = qdrant_client.query_points(
     collection_name=COLLECTION_NAME,
     query=query_vector,
     limit=1,
 )
+print("Done Search")
 
 # =========================
 # Verification
 # =========================
+
+print("Done Verification")
 print(qdrant_client.get_collections())
 print(f"For query '{query}', top result: {search_result.points[0].payload['doc']}")

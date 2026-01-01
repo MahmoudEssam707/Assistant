@@ -3,9 +3,8 @@
 import os
 
 from qdrant_client import QdrantClient
-from .util import logger, get_gmail_service,embeddings
+from .util import logger, send_email_smtp, embeddings
 from langchain_core.tools import tool
-from langchain_google_community.gmail.send_message import GmailSendMessage
 
 # =========================
 # Qdrant Client
@@ -56,32 +55,19 @@ def search_in_knowledge(query: str, collection_name: str = "my_collection") -> s
 @tool
 def gmail_send_tool(to: str, subject: str, body: str) -> str:
     """
-    Send an email using Gmail.
+    Send an email using Gmail SMTP.
     """
-    logger.info(f"Sending Gmail to={to}, subject={subject}")
+    logger.info(f"Sending email via SMTP to={to}, subject={subject}")
 
     try:
-        service = get_gmail_service()
+        result = send_email_smtp(to=to, subject=subject, body=body)
+        return f"✅ {result}"
 
-        send_mail_tool = GmailSendMessage.from_api_resource(
-            api_resource=service
-        )
-
-        send_mail_tool.run(
-            {
-                "to": to,
-                "subject": subject,
-                "message": body,
-            }
-        )
-
-        return "✅ Email sent successfully."
-
-    except FileNotFoundError:
-        return "❌ credentials.json not found. Gmail is not configured."
+    except ValueError as e:
+        return f"❌ Configuration error: {e}"
 
     except Exception as e:
-        logger.exception("Gmail send failed")
+        logger.exception("Email send failed")
         return f"❌ Failed to send email: {e}"
 
 

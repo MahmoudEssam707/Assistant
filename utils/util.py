@@ -16,10 +16,10 @@ from dotenv import load_dotenv
 # LangChain & LLMs
 from langgraph.graph.message import add_messages
 
-# Gmail API
-from langchain_google_community.gmail.utils import (
-    get_google_credentials, build_gmail_service
-)
+# SMTP for Email
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 # =========================
 # Environment Setup
@@ -45,17 +45,32 @@ class State(TypedDict):
     messages: Annotated[list, add_messages]
 
 # =========================
-# Gmail API Integration Utilities
+# SMTP Email Configuration
 # =========================
-def get_gmail_service():
+def send_email_smtp(to: str, subject: str, body: str) -> str:
     """
-    Load/create OAuth credentials and return a Gmail API service.
+    Send an email using SMTP (Gmail).
+    Requires SMTP_EMAIL and SMTP_PASSWORD environment variables.
     """
-    credentials = get_google_credentials(
-        scopes=["https://mail.google.com/"],
-        client_secrets_file="credentials.json",
-    )
-    return build_gmail_service(credentials=credentials)
+    smtp_email = os.getenv("SMTP_EMAIL")
+    smtp_password = os.getenv("SMTP_PASSWORD")
+    
+    if not smtp_email or not smtp_password:
+        raise ValueError("SMTP_EMAIL and SMTP_PASSWORD must be set in environment")
+    
+    # Create message
+    msg = MIMEMultipart()
+    msg['From'] = smtp_email
+    msg['To'] = to
+    msg['Subject'] = subject
+    msg.attach(MIMEText(body, 'plain'))
+    
+    # Send via Gmail SMTP
+    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+        server.login(smtp_email, smtp_password)
+        server.send_message(msg)
+    
+    return "Email sent successfully"
 
 # =========================
 # LLM and Embeddings Initialization

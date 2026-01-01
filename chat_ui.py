@@ -21,7 +21,7 @@ st.markdown("""
 
 class SimpleChat:
     def __init__(self):
-        self.api_url = "http://localhost:2024"
+        self.api_url = "http://assistant-api:2024"
 
     def send_message(self, message: str) -> Optional[str]:
         """Send message to agent and return response."""
@@ -56,10 +56,8 @@ class SimpleChat:
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
                 st.write(prompt)
-
             # Get and display assistant response
             with st.chat_message("assistant"):
-                st.empty()
                 with st.spinner("🤔 Thinking..."):
                     response = self.send_message(prompt)
                 st.write(response)
