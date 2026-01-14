@@ -23,7 +23,7 @@ docker compose version
 ## Clone the Repository
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/MahmoudEssam707/Assistant/
 cd Assistant
 ```
 
