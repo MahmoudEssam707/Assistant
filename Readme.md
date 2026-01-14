@@ -34,7 +34,7 @@ cd Assistant
 Create a `.env` file in the project root:
 
 ```bash
-touch .env
+cp .env.example .env
 ```
 
 Add the following environment variables:
@@ -94,8 +94,8 @@ docker compose logs -f
 Or per service:
 
 ```bash
-docker compose logs -f api
-docker compose logs -f ui
+docker compose logs -f assistant-api
+docker compose logs -f assistant-ui
 ```
 
 ---
