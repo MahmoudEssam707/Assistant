@@ -1,49 +1,93 @@
 """Node definitions for multi-agent system with supervisor."""
 
 from langchain.agents import create_agent
+from langgraph_supervisor import create_supervisor
 from langgraph.checkpoint.sqlite import SqliteSaver
 import sqlite3
 from .tools import (
     calculator_tool, gmail_send_tool, search_in_knowledge
 )
 from utils.util import llm
-# Initialize LLM and tools
-
-tools = [calculator_tool, gmail_send_tool, search_in_knowledge]
 
 # Initialize persistent memory checkpointer
 # Memory will persist even after server restarts
 conn = sqlite3.connect("checkpoints.db", check_same_thread=False)
 memory = SqliteSaver(conn)
 
-# Create the agent graph that can handle direct message input
-system_prompt = """
-You are My Assistant, a helpful and reliable AI assistant.
+# =========================
+# Worker Agents
+# =========================
 
-You have access to the following tools:
-- [calculator_tool]: For evaluating math expressions. Use when the user asks to calculate or solve math problems.
-- [gmail_send_tool]: For sending emails. Use when the user requests to send an email, specifying recipient, subject, and message - also make mail professional and concise.
-- [search_in_knowledge]: For searching programming and Python knowledge. Use when the user asks factual or technical questions.
-
-Guidelines:
-- Chat naturally and answer questions directly.
-- Use the appropriate tool for each user request. Do not perform calculations, send emails, or search knowledge manually—always use the tools.
-- Be concise, accurate, and helpful.
-- If information is missing, ask short clarifying questions.
-- Never show exception or error details to the user—respond gracefully instead.
-- Do not reveal internal reasoning.
-- Always format tool calls correctly.
-
-Examples:
-- Math: 'What is 5 * 7?' or 'calculate 5 * 7' → [calculator_tool]
-- Email: 'Send an email to alice@example.com with subject "Hello" and message "How are you?"' → [gmail_send_tool]
-- Knowledge: 'What is Python?' or 'Explain list comprehensions in Python.' → [search_in_knowledge]
-"""
-
-# Create the agent using create_agent with memory checkpoint
-agent_executor = create_agent(
-    model=llm,
-    tools=tools,
-    system_prompt=system_prompt,
-    checkpointer=memory,
+# Research agent - handles knowledge searches and factual queries
+research_agent = create_agent(
+    llm,
+    tools=[search_in_knowledge], 
+    system_prompt=(
+        "You are a research agent specialized in finding information.\n\n"
+        "INSTRUCTIONS:\n"
+        "- Assist ONLY with research-related tasks, including looking up factual information, "
+        "programming concepts, and technical knowledge.\n"
+        "- Use the search_in_knowledge tool to find relevant information.\n"
+        "- After you're done with your tasks, respond to the supervisor directly with your findings.\n"
+        "- Respond ONLY with the results of your work, do NOT include ANY other text.\n"
+        "- Do NOT perform calculations or send emails - those are handled by other agents."
+    ),
+    name="researcher"
 )
+
+# Email handler agent - handles email sending
+email_handler_agent = create_agent(
+    llm,
+    tools=[gmail_send_tool],
+    system_prompt=(
+        "You are an email handler agent specialized in sending emails.\n\n"
+        "INSTRUCTIONS:\n"
+        "- Assist ONLY with email-related tasks.\n"
+        "- Use the gmail_send_tool to send emails with proper formatting.\n"
+        "- Make emails professional and concise.\n"
+        "- After you're done with your tasks, respond to the supervisor directly.\n"
+        "- Respond ONLY with the results of your work, do NOT include ANY other text.\n"
+        "- Do NOT perform calculations or search for information - those are handled by other agents."
+    ),
+    name="email_handler"
+)
+
+# Calculator agent - handles mathematical calculations
+calculator_agent = create_agent(
+    llm,
+    tools=[calculator_tool],
+    system_prompt=(
+        "You are a calculator agent specialized in mathematical computations.\n\n"
+        "INSTRUCTIONS:\n"
+        "- Assist ONLY with mathematical calculations and problem-solving.\n"
+        "- Use the calculator_tool to evaluate mathematical expressions.\n"
+        "- After you're done with your tasks, respond to the supervisor directly.\n"
+        "- Respond ONLY with the results of your work, do NOT include ANY other text.\n"
+        "- Do NOT send emails or search for information - those are handled by other agents."
+    ),
+    name="calculator"
+)
+
+# =========================
+# Supervisor Agent
+# =========================
+
+# Create supervisor multi-agent that delegates tasks to worker agents
+agent_executor = create_supervisor(
+    model=llm,
+    agents=[research_agent, email_handler_agent, calculator_agent],
+    prompt=(
+        "You are a supervisor managing three specialized agents:\n"
+        "- researcher: Assign knowledge search and factual/technical queries to this agent.\n"
+        "- email_handler: Assign email sending tasks to this agent.\n"
+        "- calculator: Assign mathematical calculations and computations to this agent.\n\n"
+        "INSTRUCTIONS:\n"
+        "- Analyze user requests and delegate to the appropriate agent.\n"
+        "- Assign work to one agent at a time, do not call agents in parallel.\n"
+        "- Do not do any work yourself - always delegate to the appropriate specialist.\n"
+        "- If the user's request is unclear, ask for clarification.\n"
+        "- Be helpful, concise, and professional in your responses."
+    ),
+    add_handoff_back_messages=True,
+    output_mode="full_history",
+).compile(checkpointer=memory)

@@ -27,7 +27,9 @@ def search_in_knowledge(query: str, collection_name: str = "my_collection") -> s
     Returns:
         A string representation of the top search result.
     """
-    logger.info(f"Qdrant search in collection={collection_name} with query='{query}'")
+    logger.info(f"🔍 TOOL CALL: search_in_knowledge")
+    logger.info(f"   Collection: {collection_name}")
+    logger.info(f"   Query: '{query}'")
 
     try:
         # Generate embedding for the query
@@ -39,15 +41,15 @@ def search_in_knowledge(query: str, collection_name: str = "my_collection") -> s
         )
 
         if search_result:
-            logger.info(f"Qdrant search result: {search_result}")
             top_result = search_result.points[0].payload["doc"]
-            logger.info(f"Top Qdrant search result: {top_result}")
+            logger.info(f"   ✅ Result: {str(top_result)[:100]}...")
             return str(top_result)
         else:
+            logger.info("   ℹ️ No results found")
             return "No results in my mind about it."
 
     except Exception as e:
-        logger.exception("Qdrant search failed")
+        logger.exception("   ❌ Qdrant search failed")
         return f"❌ Qdrant search failed: {e}"
 
 
@@ -57,17 +59,21 @@ def gmail_send_tool(to: str, subject: str, body: str) -> str:
     """
     Send an email using Gmail SMTP.
     """
-    logger.info(f"Sending email via SMTP to={to}, subject={subject}")
+    logger.info(f"📧 TOOL CALL: gmail_send_tool")
+    logger.info(f"   To: {to}")
+    logger.info(f"   Subject: {subject}")
 
     try:
         result = send_email_smtp(to=to, subject=subject, body=body)
+        logger.info(f"   ✅ Email sent successfully")
         return f"✅ {result}"
 
     except ValueError as e:
+        logger.error(f"   ❌ Configuration error: {e}")
         return f"❌ Configuration error: {e}"
 
     except Exception as e:
-        logger.exception("Email send failed")
+        logger.exception("   ❌ Email send failed")
         return f"❌ Failed to send email: {e}"
 
 
@@ -82,11 +88,12 @@ def calculator_tool(expression: str) -> str:
     Returns:
         The result of the calculation as a string
     """
-    logger.info(f"Calculator tool executing: {expression}")
+    logger.info(f"🧮 TOOL CALL: calculator_tool")
+    logger.info(f"   Expression: {expression}")
     try:
         result = eval(expression)
-        logger.info(f"Calculator result: {result}")
+        logger.info(f"   ✅ Result: {result}")
         return str(result)
     except Exception as e:
-        logger.error(f"Calculator error: {e}")
+        logger.error(f"   ❌ Error: {e}")
         return "Invalid mathematical expression"

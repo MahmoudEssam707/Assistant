@@ -25,67 +25,87 @@ async def root():
 async def query_agent(request: QueryRequest) -> QueryResponse:
     """Query the agent with a message."""
     try:
-        logger.info(f"Received query: {request.message[:100]}...")
-        logger.info(f"Thread ID: {request.thread_id}")
+        logger.info("=" * 80)
+        logger.info(f"📨 NEW REQUEST | Thread: {request.thread_id}")
+        logger.info(f"💬 User Query: {request.message}")
+        logger.info("=" * 80)
         
         # Create the input for the agent following the pattern you showed
         inputs = {"messages": [{"role": "user", "content": request.message}]}
-        logger.info(f"Created inputs: {inputs}")
         
         # Stream the agent response and collect results
         stream_results = []
-        logger.info("Starting graph stream...")
-        logger.info(f"Using memory checkpoint: {request.thread_id}")
         
         # Configure with thread_id for memory persistence
         config = {"configurable": {"thread_id": request.thread_id}}
         
+        logger.info("🚀 Starting agent execution...")
+        logger.info("-" * 80)
+        
         try:
             for i, chunk in enumerate(graph.stream(inputs, config=config, stream_mode="updates")):
-                logger.info(f"Chunk {i}: {chunk}")
                 stream_results.append(chunk)
+                
+                # Log each chunk in a readable format
+                if isinstance(chunk, dict):
+                    for node_name, node_data in chunk.items():
+                        logger.info(f"\n🔄 AGENT NODE: {node_name.upper()}")
+                        
+                        if isinstance(node_data, dict) and 'messages' in node_data:
+                            messages = node_data['messages']
+                            
+                            # Log each message in the chunk
+                            for msg in messages:
+                                msg_type = msg.__class__.__name__
+                                
+                                if msg_type == 'HumanMessage':
+                                    logger.info(f"  👤 Human: {msg.content[:200]}")
+                                    
+                                elif msg_type == 'AIMessage':
+                                    if hasattr(msg, 'tool_calls') and msg.tool_calls:
+                                        tool_names = [tc['name'] for tc in msg.tool_calls]
+                                        logger.info(f"  🤖 AI calling tools: {', '.join(tool_names)}")
+                                    elif msg.content:
+                                        content_preview = msg.content.replace('\n', ' ')[:200]
+                                        logger.info(f"  🤖 AI response: {content_preview}")
+                                        
+                                elif msg_type == 'ToolMessage':
+                                    tool_name = msg.name if hasattr(msg, 'name') else 'unknown'
+                                    content_preview = msg.content[:100]
+                                    logger.info(f"  🔧 Tool '{tool_name}': {content_preview}")
+                        
+                        logger.info("-" * 80)
+                        
         except Exception as stream_error:
-            logger.error(f"Error during graph streaming: {stream_error}")
-            logger.error(f"Stream error type: {type(stream_error)}")
+            logger.error(f"❌ Error during graph streaming: {stream_error}")
+            logger.error(f"Error type: {type(stream_error)}")
             raise
         
-        logger.info(f"Total stream results: {len(stream_results)}")
+        logger.info(f"\n✅ Execution complete. Total chunks: {len(stream_results)}")
+        logger.info("=" * 80)
         
-        # Extract tool outputs and final AI message
-        response_parts = []
-        final_ai_message = ""
+        # Extract the final response from the last supervisor message
+        final_response = "No response generated"
         
-        # Process all chunks to collect tool outputs and final message
+        # Process chunks to find the final AI response
         for i, chunk in enumerate(stream_results):
-            logger.info(f"Processing chunk {i}: {type(chunk)} - {chunk}")
-            
-            # Check for tool outputs
-            if isinstance(chunk, dict) and 'tools' in chunk:
-                messages = chunk['tools'].get('messages', [])
-                for message in messages:
-                    if hasattr(message, 'content') and message.content:
-                        # Add tool output to response parts
-                        response_parts.append(message.content)
-                        logger.info(f"Found tool output: {message.content[:100]}...")
-            
-            # Check for AI messages
-            if isinstance(chunk, dict) and 'model' in chunk:
-                messages = chunk['model'].get('messages', [])
-                for message in messages:
-                    if hasattr(message, 'content') and message.content:
-                        final_ai_message = message.content
-                        logger.info(f"Found AI message: {final_ai_message[:100]}...")
+            if isinstance(chunk, dict):
+                # Check for any agent node (supervisor, calculator, researcher, email_handler)
+                for node_name, node_data in chunk.items():
+                    if isinstance(node_data, dict) and 'messages' in node_data:
+                        messages = node_data['messages']
+                        # Find the last AI message with content
+                        for message in reversed(messages):
+                            if hasattr(message, 'content') and message.content:
+                                # Skip tool/system messages, get actual AI responses
+                                if hasattr(message, '__class__') and 'AIMessage' in message.__class__.__name__:
+                                    # Skip handoff messages
+                                    if 'Transferring back to supervisor' not in message.content:
+                                        final_response = message.content
+                                        logger.info(f"📤 Final Response from {node_name}: {final_response[:150]}...")
+                                        break
         
-        # Combine tool outputs with final AI message
-        if response_parts:
-            # Show tool outputs first, then AI message
-            final_response = "\n\n".join(response_parts)
-            if final_ai_message:
-                final_response += f"\n\n{final_ai_message}"
-        else:
-            final_response = final_ai_message if final_ai_message else "No response generated"
-        
-        logger.info(f"Returning response: {final_response[:100]}...")
+        logger.info("=" * 80 + "\n")
         return QueryResponse(response=final_response, thread_id=request.thread_id)
     
     except Exception as e:
