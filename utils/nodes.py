@@ -20,7 +20,7 @@ memory = SqliteSaver(conn)
 
 # Research agent - handles knowledge searches and factual queries
 research_agent = create_agent(
-    llm,
+    model=llm,
     tools=[search_in_knowledge], 
     system_prompt=(
         "You are a research agent specialized in finding information.\n\n"
@@ -37,16 +37,16 @@ research_agent = create_agent(
 
 # Email handler agent - handles email sending
 email_handler_agent = create_agent(
-    llm,
+    model=llm,
     tools=[gmail_send_tool],
     system_prompt=(
         "You are an email handler agent specialized in sending emails.\n\n"
         "INSTRUCTIONS:\n"
-        "- Assist ONLY with email-related tasks.\n"
-        "- Use the gmail_send_tool to send emails with proper formatting.\n"
-        "- Make emails professional and concise.\n"
-        "- After you're done with your tasks, respond to the supervisor directly.\n"
-        "- Respond ONLY with the results of your work, do NOT include ANY other text.\n"
+        "- When assigned an email task, you MUST call the gmail_send_tool to actually send the email.\n"
+        "- NEVER just say you will send an email - ALWAYS use the gmail_send_tool to send it.\n"
+        "- Extract the recipient email, subject, and body from the user's request.\n"
+        "- If any information is missing, ask the supervisor for clarification.\n"
+        "- After successfully sending the email using the tool, report the result to the supervisor.\n"
         "- Do NOT perform calculations or search for information - those are handled by other agents."
     ),
     name="email_handler"
@@ -54,7 +54,7 @@ email_handler_agent = create_agent(
 
 # Calculator agent - handles mathematical calculations
 calculator_agent = create_agent(
-    llm,
+    model=llm,
     tools=[calculator_tool],
     system_prompt=(
         "You are a calculator agent specialized in mathematical computations.\n\n"
@@ -81,13 +81,13 @@ agent_executor = create_supervisor(
         "- researcher: Assign knowledge search and factual/technical queries to this agent.\n"
         "- email_handler: Assign email sending tasks to this agent.\n"
         "- calculator: Assign mathematical calculations and computations to this agent.\n\n"
-        "INSTRUCTIONS:\n"
-        "- Analyze user requests and delegate to the appropriate agent.\n"
-        "- Assign work to one agent at a time, do not call agents in parallel.\n"
-        "- Do not do any work yourself - always delegate to the appropriate specialist.\n"
-        "- If the user's request is unclear, ask for clarification.\n"
-        "- Be helpful, concise, and professional in your responses."
+        "CRITICAL RULES:\n"
+        "- Delegate tasks to the appropriate agent and let them complete the work.\n"
+        "- DO NOT tell the user you are delegating - just delegate silently.\n"
+        "- DO NOT respond to the user until the agent has finished and returned results.\n"
+        "- When the agent returns results, present those results directly to the user.\n"
+        "- If the user's request is unclear, ask for clarification before delegating.\n"
     ),
     add_handoff_back_messages=True,
-    output_mode="full_history",
+    output_mode="last_message",
 ).compile(checkpointer=memory)
