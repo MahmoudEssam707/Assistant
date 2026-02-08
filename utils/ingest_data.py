@@ -63,7 +63,7 @@ def ingest_documents(
     
     # Initialize ChromaDB client
     client = chromadb.HttpClient(
-        host="localhost",
+        host=os.getenv("CHROMA_HOST", "localhost"),
         port=int(os.getenv("CHROMA_PORT", "8000")),
         settings=chromadb.config.Settings(anonymized_telemetry=False)
     )

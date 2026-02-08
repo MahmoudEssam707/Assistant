@@ -10,7 +10,7 @@ load_dotenv()
 
 # Initialize ChromaDB client
 chroma_client = chromadb.HttpClient(
-    host="localhost",
+    host=os.getenv("CHROMA_HOST", "localhost"),
     port=int(os.getenv("CHROMA_PORT", "8000")),
 )
 

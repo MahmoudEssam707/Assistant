@@ -24,16 +24,30 @@ cp .env.example .env
 ### 2. Configure `.env`
 
 ```env
-# Required to change the following
-LLM_API_KEY=your_openai_api_key
-LLM_BASE_URL=https://api.openai.com/v1
-LLM_MODEL_NAME=gpt-4
-JINA_EMBEDDING_API_KEY=your_jina_api_key
-JINA_EMBEDDING_MODEL=jina-embeddings-v2-base-en
+# LLM and API Configuration 
+LLM_API_KEY=
+LLM_BASE_URL=
+LLM_MODEL_NAME=
 
-# Optional (for email)
-SMTP_EMAIL=your_email@gmail.com
-SMTP_PASSWORD=your_gmail_app_password
+# embedding service configuration
+JINA_EMBEDDING_API_KEY=
+JINA_EMBEDDING_MODEL=
+
+# ChromaDB service (vector database)
+CHROMA_HOST=assistant-chromadb
+CHROMA_PORT=8000
+CHROMA_COLLECTION_NAME=my_collection
+
+# SMTP Email Configuration (for Gmail)
+# Generate app password: https://myaccount.google.com/apppasswords
+SMTP_EMAIL=
+SMTP_PASSWORD=
+
+# API Configuration (for chat UI)
+API_URL=http://assistant-api:2024
+
+# Logging Configuration
+LOG_LEVEL=INFO
 ```
 
 ### 3. Run with Docker
@@ -42,13 +56,10 @@ SMTP_PASSWORD=your_gmail_app_password
 docker compose up -d --build
 ```
 
-### 4. Add Knowledge Base (Optional)
+### 4. Add Knowledge Base
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-python utils/ingest_data.py
+docker exec -it assistant-api bash -c "python utils/ingest_data.py && python test/test_chroma.py"
 ```
 
 ---
