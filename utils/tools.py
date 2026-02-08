@@ -2,46 +2,59 @@
 
 import os
 
-from qdrant_client import QdrantClient
+import chromadb
 from .util import logger, send_email_smtp, embeddings
 from langchain_core.tools import tool
 
 # =========================
-# Qdrant Client
+# ChromaDB Client
 # =========================
-client = QdrantClient(
-    url=os.getenv("QDRANT_BASE_URL"),
-    api_key=os.getenv("QDRANT_API_KEY"),
+client = chromadb.HttpClient(
+    host=os.getenv("CHROMA_HOST", "localhost"),
+    port=int(os.getenv("CHROMA_PORT", "8000")),
 )
+# Default collection name (configurable via env var)
+DEFAULT_COLLECTION = os.getenv("CHROMA_COLLECTION_NAME", "my_collection")
 
-# Tool to search in Qdrant collection
+# Tool to search in ChromaDB collection
 @tool
-def search_in_knowledge(query: str, collection_name: str = "my_collection") -> str:
+def search_in_knowledge(query: str, collection_name: str = None) -> str:
     """
-    Search for the top similar vector in a Qdrant collection using a text query.
+    Search for the top similar vector in a ChromaDB collection using a text query.
 
     Args:
         query: The user text query.
-        collection_name: The name of the Qdrant collection to search (default: "my_collection").
+        collection_name: The name of the ChromaDB collection to search. 
+                        If not provided, uses CHROMA_COLLECTION_NAME env var (default: "my_collection").
 
     Returns:
         A string representation of the top search result.
     """
+    if collection_name is None:
+        collection_name = DEFAULT_COLLECTION
+        
     logger.info(f"🔍 TOOL CALL: search_in_knowledge")
     logger.info(f"   Collection: {collection_name}")
     logger.info(f"   Query: '{query}'")
 
     try:
+        # Get or create collection
+        collection = client.get_or_create_collection(
+            name=collection_name,
+            metadata={"hnsw:space": "cosine"}
+        )
+        
         # Generate embedding for the query
         query_vector = embeddings.embed_query(query)
-        search_result = client.query_points(
-            collection_name=collection_name,
-            query=query_vector,
-            limit=1,
+        
+        # Query ChromaDB
+        search_result = collection.query(
+            query_embeddings=[query_vector],
+            n_results=1,
         )
 
-        if search_result:
-            top_result = search_result.points[0].payload["doc"]
+        if search_result and search_result['documents'] and search_result['documents'][0]:
+            top_result = search_result['documents'][0][0]
             logger.info(f"   ✅ Result: {str(top_result)[:100]}...")
             return str(top_result)
         else:
@@ -49,9 +62,8 @@ def search_in_knowledge(query: str, collection_name: str = "my_collection") -> s
             return "No results in my mind about it."
 
     except Exception as e:
-        logger.exception("   ❌ Qdrant search failed")
-        return f"❌ Qdrant search failed: {e}"
-
+        logger.exception("   ❌ ChromaDB search failed")
+        return f"❌ ChromaDB search failed: {e}"
 
 
 @tool

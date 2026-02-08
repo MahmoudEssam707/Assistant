@@ -4,6 +4,8 @@ Simple Streamlit Chat UI for Mail Sender Agent
 
 import streamlit as st
 import requests
+import os
+import uuid
 from typing import Optional
 
 
@@ -21,12 +23,16 @@ st.markdown("""
 
 class SimpleChat:
     def __init__(self):
-        self.api_url = "http://assistant-api:2024"
+        self.api_url = os.getenv("API_URL", "http://assistant-api:2024")
+        # Generate unique thread_id per session
+        if "thread_id" not in st.session_state:
+            st.session_state.thread_id = str(uuid.uuid4())
+        self.thread_id = st.session_state.thread_id
 
     def send_message(self, message: str) -> Optional[str]:
         """Send message to agent and return response."""
         try:
-            payload = {"message": message, "thread_id": "simple_chat"}
+            payload = {"message": message, "thread_id": self.thread_id}
             response = requests.post(f"{self.api_url}/query", json=payload)
             if response.status_code == 200:
                 return response.json()["response"]

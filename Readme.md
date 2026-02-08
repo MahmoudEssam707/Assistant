@@ -1,115 +1,68 @@
-# How to Run the Assistant Project
+# Multi-Agent Assistant
 
-This guide explains how to run the Assistant project locally using **Docker Compose**.
+A multi-agent AI assistant with knowledge search, calculations, and email capabilities. Built with LangGraph, FastAPI, and Streamlit.
 
 ---
 
 ## Prerequisites
 
-Make sure you have the following installed:
-
-* Docker
-* Docker Compose
-
-Verify installation:
-
-```bash
-docker --version
-docker compose version
-```
+* Docker & Docker Compose
+* Python 3.10+ (for data ingestion)
 
 ---
 
-## Clone the Repository
+## Quick Start
+
+### 1. Clone & Setup
 
 ```bash
 git clone https://github.com/MahmoudEssam707/Assistant/
 cd Assistant
-```
-
----
-
-## Environment Setup
-
-Create a `.env` file in the project root:
-
-```bash
 cp .env.example .env
 ```
 
-Add the following environment variables:
+### 2. Configure `.env`
 
 ```env
-# LLM Configuration
+# Required to change the following
 LLM_API_KEY=your_openai_api_key
 LLM_BASE_URL=https://api.openai.com/v1
 LLM_MODEL_NAME=gpt-4
-
-# Jina Embeddings
 JINA_EMBEDDING_API_KEY=your_jina_api_key
 JINA_EMBEDDING_MODEL=jina-embeddings-v2-base-en
 
-# Qdrant Vector Database
-QDRANT_BASE_URL=https://your-cluster.qdrant.io
-QDRANT_API_KEY=your_qdrant_api_key
-
-# Gmail SMTP
+# Optional (for email)
 SMTP_EMAIL=your_email@gmail.com
 SMTP_PASSWORD=your_gmail_app_password
 ```
 
----
-
-## Build and Run the Application
-
-From the project root directory:
+### 3. Run with Docker
 
 ```bash
 docker compose up -d --build
 ```
 
-This will start:
-
-* FastAPI Backend
-* Streamlit UI
-
----
-
-## Access the Application
-
-* Streamlit UI:
-  [http://localhost:8501](http://localhost:8501)
-
-* FastAPI Health Check:
-  [http://localhost:2024/health](http://localhost:2024/health)
-
----
-
-## View Logs (Optional)
+### 4. Add Knowledge Base (Optional)
 
 ```bash
-docker compose logs -f
-```
-
-Or per service:
-
-```bash
-docker compose logs -f assistant-api
-docker compose logs -f assistant-ui
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+python utils/ingest_data.py
 ```
 
 ---
 
-## Stop the Application
+## Access
+
+* **Chat UI**: [http://localhost:8501](http://localhost:8501)
+* **API**: [http://localhost:2024](http://localhost:2024)
+* **ChromaDB**: [http://localhost:8000](http://localhost:8000)
+
+---
+
+## Stop
 
 ```bash
 docker compose down
-```
-
----
-
-## Rebuild After Code Changes
-
-```bash
-docker compose up -d --build
 ```

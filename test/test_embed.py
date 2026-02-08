@@ -5,14 +5,11 @@ from dotenv import load_dotenv
 load_dotenv()
 print("Done Environment setup")
 
-
-
 embeddings = JinaEmbeddings(
-    jina_api_key=os.getenv("EMBEDDING_API_KEY"),
-    model_name=os.getenv("EMBEDDING_MODEL"),
+    jina_api_key=os.getenv("JINA_EMBEDDING_API_KEY"),
+    model_name=os.getenv("JINA_EMBEDDING_MODEL"),
 )
 print("Done Embedding initialization")
-
 
 # testing the embeddings
 if __name__ == "__main__":

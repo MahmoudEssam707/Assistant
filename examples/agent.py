@@ -11,8 +11,8 @@ load_dotenv()
 
 llm = ChatOpenAI(
     api_key=os.getenv("LLM_API_KEY"),
-    base_url=os.getenv("LLM_BASEURL"),
-    model=os.getenv("LLM_NAME"),
+    base_url=os.getenv("LLM_BASE_URL"),
+    model=os.getenv("LLM_MODEL_NAME"),
 )
 
 tools = [generate_fake_person]

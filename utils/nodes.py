@@ -26,11 +26,9 @@ research_agent = create_agent(
         "You are a research agent specialized in finding information.\n\n"
         "INSTRUCTIONS:\n"
         "- Assist ONLY with research-related tasks, including looking up factual information, "
-        "programming concepts, and technical knowledge.\n"
         "- Use the search_in_knowledge tool to find relevant information.\n"
         "- After you're done with your tasks, respond to the supervisor directly with your findings.\n"
         "- Respond ONLY with the results of your work, do NOT include ANY other text.\n"
-        "- Do NOT perform calculations or send emails - those are handled by other agents."
     ),
     name="researcher"
 )
@@ -47,7 +45,6 @@ email_handler_agent = create_agent(
         "- Extract the recipient email, subject, and body from the user's request.\n"
         "- If any information is missing, ask the supervisor for clarification.\n"
         "- After successfully sending the email using the tool, report the result to the supervisor.\n"
-        "- Do NOT perform calculations or search for information - those are handled by other agents."
     ),
     name="email_handler"
 )
@@ -63,7 +60,6 @@ calculator_agent = create_agent(
         "- Use the calculator_tool to evaluate mathematical expressions.\n"
         "- After you're done with your tasks, respond to the supervisor directly.\n"
         "- Respond ONLY with the results of your work, do NOT include ANY other text.\n"
-        "- Do NOT send emails or search for information - those are handled by other agents."
     ),
     name="calculator"
 )
@@ -78,7 +74,7 @@ agent_executor = create_supervisor(
     agents=[research_agent, email_handler_agent, calculator_agent],
     prompt=(
         "You are a supervisor managing three specialized agents:\n"
-        "- researcher: Assign knowledge search and factual/technical queries to this agent.\n"
+        "- researcher: Assign knowledge search and any questions user wonders to this agent.\n"
         "- email_handler: Assign email sending tasks to this agent.\n"
         "- calculator: Assign mathematical calculations and computations to this agent.\n\n"
         "CRITICAL RULES:\n"

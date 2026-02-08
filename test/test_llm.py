@@ -1,21 +1,19 @@
-
+"""Test LLM connectivity and basic functionality."""
+import os
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
-import os
-load_dotenv()
-print("Done Environment setup")
 
+load_dotenv()
 
 llm = ChatOpenAI(
-    api_key=os.getenv("LLM_API_KEY"),
-    base_url=os.getenv("LLM_BASE_URL"),
-    model=os.getenv("LLM_MODEL_NAME"),
-)
-print("Done LLM initialization")
+        api_key=os.getenv("LLM_API_KEY"),
+        base_url=os.getenv("LLM_BASE_URL"),
+        model=os.getenv("LLM_MODEL_NAME"),
+    )
 
+def test_llm_connection(llm):
+    """Test that LLM can be initialized and respond to basic input."""
+    output = llm.invoke(input="Hello, how are you today?")
+    print(f"✅ LLM Response: {output.content}")
 
-output = llm.invoke(input="Hello, how are you today?")
-print("Done LLM call")
-
-print(output.content)
-print("Done Output")
+test_llm_connection(llm)

@@ -10,15 +10,26 @@ services:
     environment:
       - PYTHONPATH=/app
       - DISPLAY=${DISPLAY}
+      - CHROMA_HOST=assistant-chromadb
+      - CHROMA_PORT=8000
     command: ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "2024"]
     volumes:
       - .:/app
-      - /tmp/.X11-unix:/tmp/.X11-unix
+    depends_on:
+      - chromadb
     restart: unless-stopped
-    healthcheck:
-      interval: 30s
-      timeout: 10s
-      retries: 3
+
+  # ChromaDB Vector Database Service
+  chromadb:
+    image: chromadb/chroma:0.4.24
+    container_name: assistant-chromadb
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./chroma_data:/chroma/chroma
+    environment:
+      - ALLOW_RESET=True
+    restart: unless-stopped
 
   # Streamlit Frontend Service  
   ui:
@@ -30,9 +41,12 @@ services:
       - .env
     environment:
       - PYTHONPATH=/app
+      - CHROMA_HOST=assistant-chromadb
+      - CHROMA_PORT=8000
     command: ["streamlit", "run", "chat_ui.py"]
     volumes:
       - .:/app
     depends_on:
       - api
+      - chromadb
     restart: unless-stopped

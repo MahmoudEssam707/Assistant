@@ -7,14 +7,9 @@ Shared utilities, classes, and configurations for the agent.
 # =========================
 import logging
 from langchain_openai import ChatOpenAI
-from typing_extensions import TypedDict
-from typing import Annotated
 from langchain_community.embeddings import JinaEmbeddings
 import os
 from dotenv import load_dotenv
-
-# LangChain & LLMs
-from langgraph.graph.message import add_messages
 
 # SMTP for Email
 import smtplib
@@ -29,20 +24,27 @@ load_dotenv()
 # =========================
 # Logging Configuration
 # =========================
-logger = logging.getLogger(__name__)
-file_handler = logging.FileHandler("state_logs.log")
-file_handler.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
-logger.setLevel(logging.INFO)
+def _setup_logger():
+    """Configure logger with stdout/stderr handlers for Docker compatibility."""
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)
+    
+    # Use stdout for Docker compatibility instead of file
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+    
+    # Structured logging format
+    formatter = logging.Formatter(
+        '%(asctime)s | %(levelname)-8s | %(name)s | %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    console_handler.setFormatter(formatter)
+    
+    logger.addHandler(console_handler)
+    
+    return logger
 
-# =========================
-# State Structure
-# =========================
-class State(TypedDict):
-    """State structure with message history."""
-    messages: Annotated[list, add_messages]
+logger = _setup_logger()
 
 # =========================
 # SMTP Email Configuration

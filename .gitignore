@@ -7,3 +7,4 @@ token.json
 checkpoints.db
 checkpoints.db-shm
 checkpoints.db-wal
+chroma_data
