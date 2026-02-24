@@ -84,6 +84,6 @@ llm = ChatOpenAI(
 )
 
 embeddings = JinaEmbeddings(
-    jina_api_key=os.getenv("JINA_EMBEDDING_API_KEY"),
-    model_name=os.getenv("JINA_EMBEDDING_MODEL"),
+    jina_embedding_api_key=os.getenv("JINA_EMBEDDING_API_KEY"),
+    jina_embedding_model=os.getenv("JINA_EMBEDDING_MODEL"),
 )   
