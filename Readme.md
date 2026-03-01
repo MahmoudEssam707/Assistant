@@ -46,12 +46,6 @@ SMTP_PASSWORD=
 JIRA_INSTANCE_URL=https://your-instance.atlassian.net
 JIRA_USERNAME=your-email@example.com
 JIRA_PASSWORD=your-password-or-api-token
-
-# API Configuration (for chat UI)
-API_URL=http://assistant-api:2024
-
-# Logging Configuration
-LOG_LEVEL=INFO
 ```
 
 ### 3. Run with Docker
