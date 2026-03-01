@@ -1,13 +1,12 @@
 # Multi-Agent Assistant
 
-A multi-agent AI assistant with knowledge search, calculations, and email capabilities. Built with LangGraph, FastAPI, and Streamlit.
+A multi-agent AI assistant with knowledge search, calculations, email capabilities, and also Jira Power Tools . Built with LangGraph, FastAPI, and Streamlit.
 
 ---
 
 ## Prerequisites
 
 * Docker & Docker Compose
-* Python 3.10+ (for data ingestion)
 
 ---
 
@@ -42,6 +41,11 @@ CHROMA_COLLECTION_NAME=my_collection
 # Generate app password: https://myaccount.google.com/apppasswords
 SMTP_EMAIL=
 SMTP_PASSWORD=
+
+# Jira Configuration (username and password authentication)
+JIRA_INSTANCE_URL=https://your-instance.atlassian.net
+JIRA_USERNAME=your-email@example.com
+JIRA_PASSWORD=your-password-or-api-token
 
 # API Configuration (for chat UI)
 API_URL=http://assistant-api:2024

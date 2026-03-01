@@ -5,7 +5,8 @@ from langgraph_supervisor import create_supervisor
 from langgraph.checkpoint.sqlite import SqliteSaver
 import sqlite3
 from .tools import (
-    calculator_tool, gmail_send_tool, search_in_knowledge
+    calculator_tool, gmail_send_tool, 
+    jira_get_projects, jira_create_issue, jira_add_comment, search_in_knowledge
 )
 from utils.util import llm
 
@@ -64,6 +65,24 @@ calculator_agent = create_agent(
     name="calculator"
 )
 
+# Jira agent - handles Jira ticket management
+jira_agent = create_agent(
+    model=llm,
+    tools=[jira_get_projects, jira_create_issue, jira_add_comment],
+    system_prompt=(
+        "You are a Jira agent specialized in managing Jira tickets and projects.\n\n"
+        "INSTRUCTIONS:\n"
+        "- Assist with creating issues and adding comments to Jira.\n"
+        "- Use jira_get_projects to list all available projects.\n"
+        "- Use jira_create_issue to create new issues (requires JSON format with project, summary, issuetype).\n"
+        "- Use jira_add_comment to add comments to existing issues.\n"
+        "- When creating issues, ensure proper JSON formatting with required fields.\n"
+        "- After you're done with your tasks, respond to the supervisor directly with the results.\n"
+        "- Respond ONLY with the results of your work, do NOT include ANY other text.\n"
+    ),
+    name="jira_handler"
+)
+
 # =========================
 # Supervisor Agent
 # =========================
@@ -71,12 +90,13 @@ calculator_agent = create_agent(
 # Create supervisor multi-agent that delegates tasks to worker agents
 agent_executor = create_supervisor(
     model=llm,
-    agents=[research_agent, email_handler_agent, calculator_agent],
+    agents=[research_agent, email_handler_agent, calculator_agent, jira_agent],
     prompt=(
-        "You are a supervisor managing three specialized agents:\n"
+        "You are a supervisor managing four specialized agents:\n"
         "- researcher: Assign knowledge search and any questions user wonders to this agent.\n"
         "- email_handler: Assign email sending tasks to this agent.\n"
-        "- calculator: Assign mathematical calculations and computations to this agent.\n\n"
+        "- calculator: Assign mathematical calculations and computations to this agent.\n"
+        "- jira_handler: Assign Jira-related tasks (list projects, create tickets, add comments) to this agent.\n\n"
         "CRITICAL RULES:\n"
         "- Delegate tasks to the appropriate agent and let them complete the work.\n"
         "- DO NOT tell the user you are delegating - just delegate silently.\n"

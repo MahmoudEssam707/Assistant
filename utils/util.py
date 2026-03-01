@@ -9,7 +9,9 @@ import logging
 from langchain_openai import ChatOpenAI
 from langchain_community.embeddings import JinaEmbeddings
 import os
+import chromadb
 from dotenv import load_dotenv
+from atlassian import Jira
 
 # SMTP for Email
 import smtplib
@@ -87,3 +89,32 @@ embeddings = JinaEmbeddings(
     jina_api_key=os.getenv("JINA_EMBEDDING_API_KEY"),
     jina_embedding_model=os.getenv("JINA_EMBEDDING_MODEL"),
 )   
+
+
+client = chromadb.HttpClient(
+    host=os.getenv("CHROMA_HOST", "localhost"),
+    port=int(os.getenv("CHROMA_PORT", "8000")),
+)
+# Default collection name (configurable via env var)
+DEFAULT_COLLECTION = os.getenv("CHROMA_COLLECTION_NAME", "my_collection")
+
+# ==========================
+# Jira Init
+# ==========================
+def get_jira_client():
+    """Get Jira client with username/password authentication."""
+    jira_url = os.getenv("JIRA_INSTANCE_URL")
+    jira_username = os.getenv("JIRA_USERNAME")
+    jira_password = os.getenv("JIRA_PASSWORD")
+    
+    if not all([jira_url, jira_username, jira_password]):
+        raise ValueError(
+            "Missing Jira credentials. Please set JIRA_INSTANCE_URL, "
+            "JIRA_USERNAME, and JIRA_PASSWORD environment variables."
+        )
+    
+    return Jira(
+        url=jira_url,
+        username=jira_username,
+        password=jira_password
+    )
