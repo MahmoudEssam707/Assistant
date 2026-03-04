@@ -9,6 +9,7 @@ import logging
 from langchain_openai import ChatOpenAI
 from langchain_community.embeddings import JinaEmbeddings
 import os
+import time
 import chromadb
 from dotenv import load_dotenv
 from atlassian import Jira
@@ -90,11 +91,58 @@ embeddings = JinaEmbeddings(
     jina_embedding_model=os.getenv("JINA_EMBEDDING_MODEL"),
 )   
 
+_chroma_client = None
 
-client = chromadb.HttpClient(
-    host=os.getenv("CHROMA_HOST", "localhost"),
-    port=int(os.getenv("CHROMA_PORT", "8000")),
-)
+
+def get_chroma_client():
+    """Create (or reuse) a resilient ChromaDB HttpClient with retries."""
+    global _chroma_client
+    if _chroma_client is not None:
+        return _chroma_client
+
+    host = os.getenv("CHROMA_HOST", "localhost")
+    port = int(os.getenv("CHROMA_PORT", "8000"))
+    tenant = os.getenv("CHROMA_TENANT", "default_tenant")
+    database = os.getenv("CHROMA_DATABASE", "default_database")
+    attempts = int(os.getenv("CHROMA_CONNECT_RETRIES", "8"))
+    delay_seconds = float(os.getenv("CHROMA_CONNECT_RETRY_DELAY", "1.5"))
+
+    last_error = None
+    for attempt in range(1, attempts + 1):
+        try:
+            _chroma_client = chromadb.HttpClient(
+                host=host,
+                port=port,
+                tenant=tenant,
+                database=database,
+            )
+            logger.info(
+                "Connected to ChromaDB at %s:%s (tenant=%s, database=%s)",
+                host,
+                port,
+                tenant,
+                database,
+            )
+            return _chroma_client
+        except Exception as exc:
+            last_error = exc
+            logger.warning(
+                "ChromaDB connection attempt %s/%s failed: %s",
+                attempt,
+                attempts,
+                exc,
+            )
+            if attempt < attempts:
+                time.sleep(delay_seconds)
+
+    raise RuntimeError(
+        f"Unable to connect to ChromaDB at {host}:{port} after {attempts} attempts. "
+        f"Last error: {last_error}"
+    )
+
+
+# Backward compatibility for existing imports.
+client = get_chroma_client
 # Default collection name (configurable via env var)
 DEFAULT_COLLECTION = os.getenv("CHROMA_COLLECTION_NAME", "my_collection")
 

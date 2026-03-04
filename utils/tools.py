@@ -2,7 +2,7 @@
 
 import os
 import json
-from .util import logger, send_email_smtp, embeddings, get_jira_client, client, DEFAULT_COLLECTION
+from .util import logger, send_email_smtp, embeddings, get_jira_client, get_chroma_client, DEFAULT_COLLECTION
 from langchain_core.tools import tool
 
 # =========================
@@ -82,8 +82,9 @@ def search_in_knowledge(query: str, collection_name: str = None) -> str:
     logger.info(f"   Query: '{query}'")
 
     try:
+        chroma_client = get_chroma_client()
         # Get or create collection
-        collection = client.get_or_create_collection(
+        collection = chroma_client.get_or_create_collection(
             name=collection_name,
             metadata={"hnsw:space": "cosine"}
         )
